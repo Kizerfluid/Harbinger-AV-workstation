@@ -1,76 +1,124 @@
 # Harbinger
 
-**Harbinger** is a cross-platform C++17/Qt6 desktop application for video transcoding, multi-track MKV muxing and LAN-distributed encoding. It uses external **FFmpeg** and **FFprobe** executables, with a full graphical interface on **Windows and Linux**.
+**Harbinger** is an open-source, cross-platform desktop application for video transcoding, multi-track MKV muxing, audio synchronisation and distributed encoding. Built with **C++17 and Qt6**, it uses **FFmpeg/FFprobe** behind a graphical interface for **Windows and Linux**.
 
-**Current source version: v0.6.3** · **Licence: GPL-3.0** · **Hive protocol: v5**
+**Latest public release: v0.6.3** · **Licence: GPL-3.0** · **Harbinger Hive protocol: v5**
 
-> **Development status:** Harbinger is a work-in-progress source project, not a prebuilt installer. Hive Smart Encoding was tested successfully on Windows + openSUSE in v0.6.2 (12 episodes, six per machine). The v0.6.3 changes—including its MKV muxer crash fix and Hive v5 compatibility—still require regression testing before being treated as fully verified.
+[**Download the latest release**](../../releases/latest) · [Changelog](CHANGELOG.md) · [Build from source](#building-from-source) · [Documentation](#documentation)
+
+## Download
+
+You **do not need to compile Harbinger** to try the published builds.
+
+| Platform | Download | Package |
+| --- | --- | --- |
+| **Windows 10/11 (x64)** | [**Download Windows ZIP**](../../releases/download/0.6.3/Harbinger-v0.6.3-Windows-x64.zip) | Portable ZIP containing `Harbinger.exe` and deployed Qt runtime files |
+| **Linux (x86-64)** | [**Download Linux AppImage**](../../releases/download/0.6.3/Harbinger-v0.6.3-x86_64.AppImage) | Single-file graphical application with packaged Qt and FFmpeg tools |
+
+**Checksums:** [Windows SHA-256](../../releases/download/0.6.3/Harbinger-v0.6.3-Windows-x64.zip.sha256) · [Linux SHA-256](../../releases/download/0.6.3/Harbinger-v0.6.3-x86_64.AppImage.sha256). The release page also contains GitHub-generated source archives.
+
+### Windows installation
+
+1. Download the Windows ZIP and extract **the entire archive** to a directory of your choice.
+2. Run `Harbinger.exe` from the extracted directory.
+3. If FFmpeg and FFprobe are not already provided or configured, install compatible Windows executables and put them on your `PATH`, beside Harbinger, or select their paths in the application settings.
+
+The Windows package deploys Qt's application libraries; it is not a traditional installer. GPU acceleration requires a suitable driver and FFmpeg hardware-encoder support.
+
+### Linux installation
+
+Download the x86-64 AppImage, then open a terminal in its download directory:
+
+```bash
+chmod +x Harbinger-v0.6.3-x86_64.AppImage
+./Harbinger-v0.6.3-x86_64.AppImage
+```
+
+The AppImage is intended for modern **x86-64, glibc-based Linux distributions** such as openSUSE, Ubuntu/Mint, Fedora and Arch. It is built from a Debian 12 baseline (glibc 2.36); compatibility with every distribution and desktop environment has **not** been verified. It does not cover ARM64. GPU drivers are supplied by the host system and hardware-accelerated encoding depends on their compatibility with the packaged FFmpeg build.
+
+For packaging details and troubleshooting, see [Linux AppImage releases](docs/LINUX_APPIMAGE_RELEASE.md). For a native openSUSE source build, see [openSUSE build and Hive guide](docs/OPENSUSE_HIVE.md).
+
+> **Release status:** v0.6.3 is an early public release. Smart Encoding and Hive have undergone real-world testing, but some features (notably experimental single-video splitting) remain under development. The v0.6.3 muxer stability fix and new Advanced Encoding settings should be tested with your own media before relying on them for archival work. Keep original files until output has been checked.
 
 ## Features
 
-- **Smart Encoding:** optional approximate per-file target size, quality priority, speed, codec choice, source-aware bitrate allocation, preservation of compatible MKV tracks, and an FFmpeg-only lossless final remux.
-- **Advanced Encoding:** per-codec quality/speed options, GPU/CPU encode and decode preferences, optional resizing, explicit **8-bit/10-bit** output (encoder-dependent), and frame-rate control including **23.976/29.97/59.94 fps** and custom rates.
-- **MKV track muxer:** combine video, multiple audio languages, subtitles and optional chapters from different sources without re-encoding supported streams; edit track titles, languages, default/forced flags and audio delays.
-- **Dub-aware audio synchronisation:** compare waveform signatures to suggest time offsets for alternative-language soundtracks, with manual review. A separate batch muxer can apply a source-track template across a season.
-- **Harbinger Hive:** distribute independent encoding jobs between trusted Windows and Linux machines over an encrypted LAN connection, with opt-in worker approval and hardware-aware routing.
-- **Hardware detection:** probes FFmpeg's supported NVIDIA NVENC, AMD/Intel and software paths; actual capabilities depend on the local driver and FFmpeg build.
-- **Media inspection:** view video/audio/subtitle metadata and estimated average per-stream bitrates; for MKV files, missing bitrate values can be measured from compressed packets on import.
+- **Smart Encoding:** optional approximate target file size *per input*, source-aware video/audio bitrate allocation, quality and speed preferences, codec selection, compatible MKV track preservation, and a lossless FFmpeg-only final remux.
+- **Advanced Encoding:** codec and quality settings, CPU/GPU encoding and decoding preferences, optional resizing, explicit **8-bit or 10-bit** output on supported codecs, and frame-rate choices including **23.976, 29.97 and 59.94 fps** or custom rates.
+- **Multi-track MKV muxer:** combine video, multiple audio languages and subtitles from different sources without re-encoding compatible streams; edit titles, language tags, default/forced track flags and audio delays, with chapter selection where supported.
+- **Dub-aware audio synchronisation:** compare waveform signatures to suggest offsets for alternative-language dubs, with manual adjustment and batch muxing across matched episodes.
+- **Harbinger Hive:** share encoding work between trusted Windows and Linux computers over a TLS-protected local network, with user approval and per-worker hardware capabilities. Smart Encoding distributes whole files across workers.
+- **Hardware acceleration:** detect and test supported NVIDIA NVENC, AMD/Intel and software encoding/decoding paths through the installed or packaged FFmpeg build.
+- **Media inspection:** see video, audio and subtitle stream metadata; measure approximate average video/audio bitrates from FFprobe packets when stream metadata is missing or outdated.
 
-## Requirements
+## Getting started
 
-- C++17 compiler and CMake 3.21 or newer.
-- Qt 6.4 or newer with **Core**, **Widgets** and **Network**, plus a working Qt TLS backend for Hive.
-- Installed `ffmpeg` and `ffprobe` available to Harbinger; the worker also needs the relevant encoders.
-- `openssl` command-line utility for worker certificate creation where required.
-- GPU drivers only if using hardware acceleration. CPU encoding works without a GPU.
+For a normal encode, add one or more media files to the queue, choose **Smart Encoding** for automatic bitrate planning or **Advanced Encoding** for manual control, select the output settings and start encoding.
 
-### Windows — Visual Studio 2022 + vcpkg
+For combining tracks from different files, open the **MKV Track Muxer**, import the sources, select the video/audio/subtitle tracks and adjust their metadata or timing as needed. Compatible streams are copied rather than re-encoded.
 
-The project uses a Qt6 CMake build. An example command when Qt6 is supplied via vcpkg:
+### Using Harbinger Hive
+
+1. Run **the same Harbinger version** on each Windows or Linux computer. v0.6.3 uses **Hive protocol v5** and is not compatible with v4 workers.
+2. On the worker machine, open **Harbinger Hive** and enable **Allow other Harbinger computers to request encoding work**.
+3. Permit inbound **TCP 36840** on the worker's actual local firewall zone. **UDP 36839** is used for automatic discovery; you can also add a worker by IP address.
+4. On the coordinator, queue files and open Hive. Select the worker and optionally enable **Include this computer in encoding** so both machines contribute.
+5. Verify the worker's TLS pairing code and approve the connection on the worker. For Smart Encoding batches, leave the experimental single-video segment splitting disabled.
+
+**Keep Hive on a trusted LAN; do not expose its worker port to the public Internet.** The v0.6.2 Hive implementation successfully processed a real 12-episode Smart Encoding batch across a Windows RTX 3090 PC and an openSUSE GTX 1650 server (six episodes on each). This demonstrates a working cross-platform batch workflow; the v0.6.3 protocol changes still need separate regression testing.
+
+See [Hive networking, setup and limitations](docs/HIVE.md) for additional details.
+
+## Building from source
+
+Prebuilt releases are available above. The following requirements are for developers compiling Harbinger themselves.
+
+### Requirements
+
+- A **C++17** compiler (Visual Studio 2022/MSVC, GCC or Clang) and **CMake 3.21+**.
+- **Qt 6.4+** development libraries with Core, Widgets and Network, plus a functioning Qt TLS backend for Hive.
+- **FFmpeg** and **FFprobe** executables. The required codecs must be available in the chosen FFmpeg build.
+- The `openssl` command-line tool for certificate generation when running a Hive worker.
+- Compatible GPU drivers only if hardware acceleration is wanted; CPU encoding can be used instead.
+
+### Windows — Visual Studio 2022 and vcpkg
+
+Install the build tools and Qt6 through vcpkg, then configure from a Visual Studio 2022 developer terminal:
 
 ```bat
 cmake -S . -B build-vcpkg -G "Visual Studio 17 2022" -A x64 -DCMAKE_TOOLCHAIN_FILE="%USERPROFILE%\tools\vcpkg\scripts\buildsystems\vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows
+cmake --build build-vcpkg --config Release --target Harbinger
 ```
 
-Build the `Harbinger` target in **Release / x64**. Ensure the vcpkg installation contains `qtbase` and its required dependencies. When deploying a Windows build to another directory or PC, use Qt's `windeployqt` and include all applicable third-party licence notices.
+Adjust the vcpkg path if yours is different. For redistribution, use Qt's `windeployqt` and comply with the applicable third-party licences.
 
-### Linux — openSUSE desktop GUI
+### Linux — native GUI build
 
-Install the required packages using the distro's package manager, then run from the source directory:
+Install the corresponding Qt6, compiler, CMake, FFmpeg and TLS development packages for your distribution. On openSUSE, use:
 
 ```bash
 bash scripts/build_opensuse.sh
 ./build-opensuse/Harbinger
 ```
 
-This launches the **full graphical interface**, not headless mode. See [openSUSE setup and Hive guide](docs/OPENSUSE_HIVE.md) for dependencies, firewall settings and troubleshooting.
-
-## Using Harbinger Hive
-
-1. Install the **same Harbinger v0.6.3 build** on the Windows coordinator and Linux worker. Hive v5 is incompatible with older v4 workers.
-2. On the worker GUI, open **Harbinger Hive** and enable **Allow other Harbinger computers to request encoding work**. Approve only recognised hosts.
-3. Allow incoming **TCP 36840** in the worker's actual firewall zone; **UDP 36839** is used for automatic discovery. Do not expose Hive to the public Internet.
-4. Queue files on the coordinator, open Hive, select the worker, and optionally keep **Include this computer in encoding** enabled to use both machines.
-5. Verify the worker's TLS code during first pairing and approve the connection at the worker. For Smart Encoding, use **whole-file batch mode**, not experimental single-video splitting.
-
-Full details: [Hive guide](docs/HIVE.md) · [Smart Encoding guide](docs/SMART_ENCODING.md).
+This opens the **full graphical application**; the optional command-line Hive worker is not required. See [openSUSE desktop build instructions](docs/OPENSUSE_HIVE.md) and [Linux AppImage release tooling](docs/LINUX_APPIMAGE_RELEASE.md).
 
 ## Documentation
 
-- [Changelog](CHANGELOG.md) — feature history and v0.6.3 notes.
-- [Hive networking and limitations](docs/HIVE.md).
-- [openSUSE desktop GUI and worker setup](docs/OPENSUSE_HIVE.md).
-- [Smart Encoding and approximate size targets](docs/SMART_ENCODING.md).
-- [Multi-track transcoding and stream preservation](docs/TRANSCODING.md).
-- [Validation and regression checklist](docs/VALIDATION.md).
+- [Changelog](CHANGELOG.md) — version and feature history.
+- [Harbinger Hive](docs/HIVE.md) — networking, pairing, batch distribution and current limitations.
+- [Linux AppImage release guide](docs/LINUX_APPIMAGE_RELEASE.md) — portable build, packaging and compatibility.
+- [openSUSE GUI and Hive setup](docs/OPENSUSE_HIVE.md) — native Linux build and worker configuration.
+- [Smart Encoding](docs/SMART_ENCODING.md) — file-size estimates, quality settings and bitrate allocation.
+- [Transcoding and MKV stream preservation](docs/TRANSCODING.md).
+- [Validation and regression tests](docs/VALIDATION.md).
 - [Third-party notices](THIRD_PARTY_NOTICES.md).
 
-Previous long-form README and Hive prototype documentation are retained under [docs/history](docs/history/) for historical reference, not as up-to-date build instructions.
+Historical development notes are in [docs/history](docs/history/); use the current guides above for installation and usage.
 
 ## Limitations
 
-This is not an exact-size two-pass encoder or a full video editor. GPU support varies by GPU, FFmpeg build, driver and selected pixel format. Some unusual streams, HDR metadata and subtitle attachments may require manual verification; audio waveform matching cannot correct time drift or different edits. Hive's single-video segmentation is experimental. Always verify important outputs before deleting source files.
+Target file sizes are **approximate**, not an exact two-pass guarantee. GPU support depends on the device, driver, FFmpeg build and chosen codec/pixel format. Unusual streams, HDR metadata and subtitle attachments may require manual validation. Waveform-based synchronisation suggests a fixed offset; it cannot repair time drift or different edits. Hive's **single-video segmentation** remains experimental.
 
 ## Licence
 
-Harbinger's original frontend source is under **GNU GPL-3.0**; see [LICENSE](LICENSE). Qt, FFmpeg, OpenSSL and other dependencies have their own terms; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). This source repository does not itself bundle FFmpeg or graphics drivers.
+Harbinger's original frontend code is licensed under the **[GNU General Public License v3.0](LICENSE)**. Qt, FFmpeg, OpenSSL and other third-party components have their own licences; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The source repository does not contain proprietary GPU drivers. Release bundles and system builds may include different third-party binaries.

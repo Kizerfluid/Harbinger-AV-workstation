@@ -767,10 +767,10 @@ void MainWindow::buildMenus() {
     connect(ffprobeAction_, &QAction::triggered, this, &MainWindow::chooseFFprobe);
     connect(menuBar()->addMenu("&Help")->addAction("About Harbinger"), &QAction::triggered, this, [this] {
         QMessageBox::about(this, "About Harbinger",
-            "Harbinger 0.6.0\n\nA cross-platform FFmpeg frontend built with C++17 and Qt 6.\n\n"
+            "Harbinger 0.6.3\n\nA cross-platform FFmpeg frontend built with C++17 and Qt 6.\n\n"
             "Supports video/audio encoding and multi-source Matroska track muxing using FFmpeg and FFprobe.\n"
             "Encoders vary by FFmpeg build and available hardware.\n\n"
-            "This is an early application build, not a production release.");
+            "Free and open-source software licensed under GNU GPL-3.0.");
     });
 }
 

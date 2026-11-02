@@ -1,1 +1,40 @@
+name: Build portable Linux AppImage
 
+# Manual first: inspect and test the binary before attaching it to a release.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux-appimage:
+    runs-on: ubuntu-24.04
+    container: debian:12
+    steps:
+      - name: Install Debian 12 (glibc 2.36) build dependencies
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            ca-certificates curl git bash file findutils coreutils \
+            build-essential cmake ninja-build pkg-config \
+            qt6-base-dev qt6-base-dev-tools qt6-qpa-plugins \
+            libqt6network6 libssl-dev openssl ffmpeg \
+            libgl1-mesa-dev libxcb-cursor0
+      - name: Checkout Harbinger source
+        uses: actions/checkout@v4
+      - name: Configure Release build
+        run: |
+          cmake -S . -B build-appimage -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+      - name: Build Harbinger GUI
+        run: cmake --build build-appimage --target Harbinger --parallel 2
+      - name: Assemble AppImage with Qt6 and FFmpeg
+        run: bash scripts/package_linux_appimage.sh
+      - name: Upload AppImage and checksum for testing
+        uses: actions/upload-artifact@v4
+        with:
+          name: Harbinger-v0.6.3-x86_64-AppImage
+          path: |
+            release/Harbinger-v0.6.3-x86_64.AppImage
+            release/Harbinger-v0.6.3-x86_64.AppImage.sha256
+          if-no-files-found: error

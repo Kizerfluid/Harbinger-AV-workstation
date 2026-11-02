@@ -1,0 +1,6 @@
+{
+  "name": "harbinger",
+  "version-string": "0.4.3",
+  "builtin-baseline": "09e7d22e2d9bf97f9549c9f37759bf11758d62f0",
+  "dependencies": ["qtbase"]
+}

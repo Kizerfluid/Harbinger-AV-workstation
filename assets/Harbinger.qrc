@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="/harbinger">
+    <file alias="icon.png">Harbinger.png</file>
+  </qresource>
+</RCC>
